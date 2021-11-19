@@ -3,3 +3,6 @@ main
 decoder
 finder
 placder
+decoder_result.txt
+finder_result.txt
+placer_result.txt

@@ -22,9 +22,9 @@ int main() {
         finder_pid, 
         placer_pid;
 
-    char *decoder_data = "hello from main (decoder)";
-    char *finder_data = "hello from main (finder)";
-    char *placer_data = "hello from main (placer)";
+    char *decoder_data = "hellofrommaindecoder";
+    char *finder_data = "hellofrommainfinder";
+    char *placer_data = "hellofrommainplacer";
 
     main_process_pid = getpid();
     

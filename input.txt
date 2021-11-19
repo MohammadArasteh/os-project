@@ -1,0 +1,5 @@
+decodedtxt
+###
+1 4$24 8$92 12
+###
+test $ this is $ bye $
