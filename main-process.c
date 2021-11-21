@@ -129,12 +129,12 @@ void read_section(char str[],char result[],int* cursor) {
 
 char** input() {
     char* input = read_input();
-    int input_len = sizeof(input)/sizeof(char);
+    int input_len = strlen(input);
     int cursor = 0;
 
     char *decoder_data = malloc(input_len);
     read_section(input, decoder_data, &cursor);
-    // printf("encoder_data: %s\n", decoder_data);
+    // printf("decoder_data: %s\n", decoder_data);
 
     char *finder_data = malloc(input_len);
     read_section(input, finder_data, &cursor);
