@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
     // gathering args
     char *pipe_path = argv[1];
-    int text_len = atoi(argv[2]);
+    int buffer = atoi(argv[2]);
 
     // opening fifo file (aka named-pipe)
     int fd = open(pipe_path, O_RDONLY);
@@ -21,19 +21,19 @@ int main(int argc, char *argv[]) {
         return 2;
     }
 
-    // getting encoded text from parent process
-    char plain_text[text_len];
-    if((read(fd, &plain_text, text_len + 1)) == -1) {
+    // getting input from parent process
+    char plain_text[buffer];
+    if((read(fd, &plain_text, buffer + 1)) == -1) {
         printf("reading pipe(decoder): unexpected error\n");
         return 2;
     }
     close(fd);
 
     // decoding
-    char decoded_text[text_len];
-    for(int i = 0; i < text_len; i++)
+    char decoded_text[buffer];
+    for(int i = 0; i < buffer; i++)
         decoded_text[i] = shiftChar(plain_text[i]);
-    decoded_text[text_len-1] = '\0';
+    decoded_text[buffer-1] = '\0';
 
     // writing decoded text to a text file
     FILE *output = fopen("decoder_result.txt", "w");

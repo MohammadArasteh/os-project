@@ -18,6 +18,8 @@ static char *main_pipe_placer_path = "./pipes/main_pipe_placer";
 static char *decoder_pipe_finder_path = "./pipes/decoder_pipe_finder";
 static char *finder_pipe_placer_path = "./pipes/finder_pipe_placer";
 
+static int CURRENT_CHILD = 0;
+
 int main() {
 
     char** input_data = input(); // [decoder ~ finder ~ placer]
@@ -37,31 +39,51 @@ int main() {
     if(decoder_pid && finder_pid) placer_pid = fork();
 
     if(decoder_pid && finder_pid && placer_pid) {
+
         if(!create_pipe(main_pipe_decoder_path)) return 1;
         if(!create_pipe(main_pipe_finder_path)) return 1;
         if(!create_pipe(main_pipe_placer_path)) return 1;
 
+        int buffer;
 
         int decoder_fd = open(main_pipe_decoder_path, O_WRONLY);
-        if(write(decoder_fd, decoder_data, strlen(decoder_data) + 1) == -1) {
-            printf("writing pipe: unexpected error\n");
+        buffer = strlen(decoder_data) + 1;
+        if(write(decoder_fd, decoder_data, buffer) == -1) {
+            printf("writing pipe(decoder): unexpected error\n");
             return 2;
         }
         close(decoder_fd);
+
+        int finder_fd = open(main_pipe_finder_path, O_WRONLY);
+        buffer = strlen(finder_data) + 1;
+        if(write(finder_fd, finder_data, buffer) == -1) {
+            printf("writing pipe(finder): unexpected error\n");
+            return 2;
+        }
+        close(finder_fd);
+
+        int placer_fd = open(main_pipe_placer_path, O_WRONLY);
+        buffer = strlen(placer_data) + 1;
+        if(write(placer_fd, placer_data, buffer) == -1) {
+            printf("writing pipe(placer): unexpected error\n");
+            return 2;
+        }
+        close(placer_fd);
     }
 
-        if(!decoder_pid) {
-            char len[5];
-            sprintf(len, "%lu", strlen(decoder_data) + 1);
-            char *args[] = {"./decoder", main_pipe_decoder_path, len, NULL};
-            execv(args[0], args);
-        }
-        if(!finder_pid) {
-
-        }
-        if(!placer_pid) {
-
-        }
+    if(decoder_pid == CURRENT_CHILD) { // inside decoder process
+        char buffer[5];
+        sprintf(buffer, "%lu", strlen(decoder_data) + 1);
+        char *args[] = {"./decoder", main_pipe_decoder_path, buffer, NULL};
+        execv(args[0], args);
+    }
+    if(finder_pid == CURRENT_CHILD) { // inside finder process
+        char *args[] = {"./finder", main_pipe_finder_path, NULL};
+        execv(args[0], args);
+    }
+    if(placer_pid == CURRENT_CHILD) { //inside placer process
+        char *args[] = {"./finder", main_pipe_placer_path, NULL};
+    }
 
     return 0;
 }    
