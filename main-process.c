@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+char** input();
+char* read_input();
+void read_section(char str[],char result[],int* cursor);
 int create_pipe(char *addr);
 
 static char *main_pipe_decoder_path = "./pipes/main_pipe_decoder";
@@ -17,17 +20,18 @@ static char *finder_pipe_placer_path = "./pipes/finder_pipe_placer";
 
 int main() {
 
+    char** input_data = input(); // [decoder ~ finder ~ placer]
+    char* decoder_data = input_data[0];
+    char* finder_data = input_data[1];
+    char* placer_data = input_data[2];
+
     int main_process_pid, 
         decoder_pid, 
         finder_pid, 
         placer_pid;
 
-    char *decoder_data = "hellofrommaindecoder";
-    char *finder_data = "hellofrommainfinder";
-    char *placer_data = "hellofrommainplacer";
-
     main_process_pid = getpid();
-    
+
     decoder_pid = fork();
     if(decoder_pid) finder_pid = fork();
     if(decoder_pid && finder_pid) placer_pid = fork();
@@ -73,4 +77,50 @@ int create_pipe(char *addr) {
         }
     }
     return 1;
+}
+
+char* read_input() {
+    FILE *file = fopen("input.txt", "r");
+    fseek(file, 0, SEEK_END);
+    long f_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *result = malloc(f_size + 1);
+    fread(result, 1, f_size, file);
+    fclose(file);
+    return result;
+}
+
+void read_section(char str[],char result[],int* cursor) {
+    int temp = *cursor;
+    while(str[*cursor] != '#' && str[*cursor] != 10 && str[*cursor] != 0) {
+        result[*cursor - temp] = str[*cursor];
+        *cursor += 1;
+    }
+    result[*cursor] = '\0';
+    while(str[*cursor] == '#' || str[*cursor] == 10) *cursor += 1;
+}
+
+char** input() {
+    char* input = read_input();
+    int input_len = sizeof(input)/sizeof(char);
+    int cursor = 0;
+
+    char *decoder_data = malloc(input_len);
+    read_section(input, decoder_data, &cursor);
+    // printf("encoder_data: %s\n", decoder_data);
+
+    char *finder_data = malloc(input_len);
+    read_section(input, finder_data, &cursor);
+    // printf("finder_data: %s\n", finder_data);
+
+    char *placer_data = malloc(input_len);
+    read_section(input, placer_data, &cursor);
+    // printf("placer_data: %s\n", placer_data);
+
+    char** result = malloc(3 * input_len);
+    result[0] = decoder_data;
+    result[1] = finder_data;
+    result[2] = placer_data;
+    return result;
 }

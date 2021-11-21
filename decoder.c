@@ -37,8 +37,6 @@ int main(int argc, char *argv[]) {
 
     // writing decoded text to a text file
     FILE *output = fopen("decoder_result.txt", "w");
-    printf("%s\n", decoded_text);
-    printf("%s\n", plain_text);
     fputs(decoded_text, output);
     fclose(output);
 
