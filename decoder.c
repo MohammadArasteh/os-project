@@ -6,26 +6,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+void send_data_to_finder(char* data, char* pipe_path);
 char shiftChar(char c);
 
 int main(int argc, char *argv[]) {
 
     // gathering args
-    char *pipe_path = argv[1];
-    int buffer = atoi(argv[2]);
+    int buffer = atoi(argv[1]);
+    char *pipe_path = argv[2];
+    char *finder_pipe_path = argv[3];
 
     // opening fifo file (aka named-pipe)
     int fd = open(pipe_path, O_RDONLY);
     if(fd == -1) {
-        printf("opening pipe(decoder): unexpected error\n");
-        return 2;
+        printf("opening pipe(decoder)::: unexpected error\n");
+        exit(1);
     }
 
     // getting input from parent process
     char plain_text[buffer];
     if((read(fd, &plain_text, buffer + 1)) == -1) {
         printf("reading pipe(decoder): unexpected error\n");
-        return 2;
+        exit(1);
     }
     close(fd);
 
@@ -40,7 +42,27 @@ int main(int argc, char *argv[]) {
     fputs(decoded_text, output);
     fclose(output);
 
+    send_data_to_finder(decoded_text, finder_pipe_path);
+
     return 0;
+}
+
+void send_data_to_finder(char* data, char* pipe_path) {
+    int buffer = strlen(data);
+    int fd = open(pipe_path, O_WRONLY);
+    if(fd == -1) {
+        printf("opening pipe(decoder~finder): unexpected error\n");
+        exit(1);
+    }
+    if(write(fd, &buffer, sizeof(int)) == -1) {
+        printf("writing pipe(decoder~finder): unexpected error\n");
+        exit(1);
+    }
+    if(write(fd, data, buffer + 1) == -1) {
+        printf("writing pipe(decoder~finder): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
 }
 
 char shiftChar(char c) {

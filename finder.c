@@ -10,6 +10,7 @@ struct pair* extract_pears(char* str);
 struct pair extract_pear(char* str, int *cursor);
 int read_digit(char* str, int* cursor);
 int count_pairs(char* str);
+void get_data_from_decoder(char* result,char* pipe_path);
 
 struct pair {
     int start;
@@ -19,8 +20,10 @@ struct pair {
 int main(int argc, char *argv[]) {
     
     // gathering args
-    char *pipe_path = argv[1];
-    int buffer = atoi(argv[2]);
+    int buffer = atoi(argv[1]);
+    char *pipe_path = argv[2];
+    char *decoder_pipe_path = argv[3];
+    char *placer_pipe_path = argv[4];
 
     // opening fifo file (aka named-pipe)
     int fd = open(pipe_path, O_RDONLY);
@@ -36,14 +39,20 @@ int main(int argc, char *argv[]) {
         return 2;
     }
     close(fd);
+
     struct pair* pairs = extract_pears(pairs_string);
+
+    char* data;
+    get_data_from_decoder(data, decoder_pipe_path);
+
+    return 0;
 }
 
 struct pair* extract_pears(char* str) {
     int count = count_pairs(str);
     int cursor = 0;
     struct pair* pairs = malloc(count * sizeof(struct pair));
-    
+
     int index = 0;
     while(str[cursor] != 0) 
         pairs[index++] = extract_pear(str, &cursor);
@@ -78,4 +87,25 @@ int count_pairs(char* str) {
         index++;
     }
     return counter;
+}
+
+void get_data_from_decoder(char* result,char* pipe_path) {
+    int fd = open(pipe_path, O_RDONLY);
+    if(fd == -1) {
+        printf("opening pipe(finder~decoder): unexpected error\n");
+        exit(1);
+    }
+    int buffer;
+    if((read(fd, &buffer, sizeof(int))) == -1) {
+        printf("reading pipe(finder~decoder): unexpected error\n");
+        exit(1);
+    }
+
+    char data[buffer];
+    if((read(fd, &data, buffer + 1)) == -1) {
+        printf("reading pipe(finder~decoder): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
+    memcpy(result, data, buffer);
 }

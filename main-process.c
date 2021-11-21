@@ -43,6 +43,8 @@ int main() {
         if(!create_pipe(main_pipe_decoder_path)) return 1;
         if(!create_pipe(main_pipe_finder_path)) return 1;
         if(!create_pipe(main_pipe_placer_path)) return 1;
+        if(!create_pipe(decoder_pipe_finder_path)) return 1;
+        if(!create_pipe(finder_pipe_placer_path)) return 1;
 
         int buffer;
 
@@ -74,19 +76,29 @@ int main() {
     if(decoder_pid == CURRENT_CHILD) { // inside decoder process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(decoder_data) + 1);
-        char *args[] = {"./decoder", main_pipe_decoder_path, buffer, NULL};
+        char *args[] = {"./decoder", 
+                        buffer, 
+                        main_pipe_decoder_path, 
+                        decoder_pipe_finder_path, NULL};
         execv(args[0], args);
     }
     if(finder_pid == CURRENT_CHILD) { // inside finder process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(finder_data) + 1);
-        char *args[] = {"./finder", main_pipe_finder_path, buffer, NULL};
+        char *args[] = {"./finder", 
+                        buffer, 
+                        main_pipe_finder_path,
+                        decoder_pipe_finder_path, 
+                        finder_pipe_placer_path, NULL};
         execv(args[0], args);
     }
     if(placer_pid == CURRENT_CHILD) { //inside placer process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(placer_data) + 1);
-        char *args[] = {"./finder", main_pipe_placer_path, buffer,NULL};
+        char *args[] = {"./placer", 
+                        buffer, 
+                        main_pipe_placer_path, 
+                        finder_pipe_placer_path, NULL};
     }
 
     return 0;
