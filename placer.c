@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int get_words_count_from_finder(int fd);
+void get_data_from_finder(int words_count, int fd, char result[][32]);
+
 int main(int argc, char *argv[]) {
 
     // gathering args
@@ -28,4 +31,30 @@ int main(int argc, char *argv[]) {
     }
     close(fd);
 
+    fd = open(finder_pipe_path, O_RDONLY);
+    if(fd == -1) {
+        printf("opening pipe(finder~placer): unexpected error\n");
+        exit(1);
+    }
+    int words_count = get_words_count_from_finder(fd);
+    char words[words_count][32];
+    get_data_from_finder(words_count, fd, words);
+    close(fd);
+
+    return 0;
+}
+
+int get_words_count_from_finder(int fd) {
+    int words_count;
+    if(read(fd, &words_count, sizeof(int)) == -1) {
+        printf("writing pipe(finder~placer): unexpected error\n");
+        exit(1);
+    }
+    return words_count;
+}
+void get_data_from_finder(int words_count, int fd, char result[][32]) {
+    if((read(fd, result, words_count * 32)) == -1) {
+        printf("reading pipe(placer~decoder): unexpected error\n");
+        exit(1);
+    }
 }

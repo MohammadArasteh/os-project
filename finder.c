@@ -135,15 +135,13 @@ char* get_data_from_decoder(char* pipe_path) {
 }
 
 void send_data_to_placer(char words[][MAX_LETTER_LENGTH], char* pipe_path, int words_count) {
-    int buffer = 0;
-    for(int i = 0; i < words_count; i++) buffer += strlen(words[i]);
-
+    int buffer = words_count * MAX_LETTER_LENGTH;
     int fd = open(pipe_path, O_WRONLY);
     if(fd == -1) {
         printf("opening pipe(finder~placer): unexpected error\n");
         exit(1);
     }
-    if(write(fd, &buffer, sizeof(int)) == -1) {
+    if(write(fd, &words_count, sizeof(int)) == -1) {
         printf("writing pipe(finder~placer): unexpected error\n");
         exit(1);
     }
