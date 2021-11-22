@@ -53,6 +53,14 @@ int main(int argc, char *argv[]) {
         memcpy(letters[i], &data[start_index - 1], letter_size);
         letters[i][letter_size] = 0;
     }
+    FILE *output = fopen("finder_result.txt", "w");
+    for(int i = 0; i < pairs_count; i++) {
+        char* template = malloc(MAX_LETTER_LENGTH);
+        memcpy(template, letters[i], strlen(letters[i]));
+        template[strlen(template)] = '\n';
+        fputs(template, output);
+    }
+    fclose(output);
 
     return 0;
 }
