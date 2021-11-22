@@ -99,6 +99,7 @@ int main() {
                         buffer, 
                         main_pipe_placer_path, 
                         finder_pipe_placer_path, NULL};
+        execv(args[0], args);
     }
 
     return 0;

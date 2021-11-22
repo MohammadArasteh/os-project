@@ -6,18 +6,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int MAX_LETTER_LENGTH = 32;
+
 struct pair* extract_pears(char* str, int* pairs_count);
 struct pair extract_pear(char* str, int *cursor);
 int read_digit(char* str, int* cursor);
 int count_pairs(char* str);
 char* get_data_from_decoder(char* pipe_path);
+void send_data_to_placer(char words[][MAX_LETTER_LENGTH], char* pipe_path, int words_count);
 
 struct pair {
     int start;
     int size;
 };
 
-static int MAX_LETTER_LENGTH = 32;
 
 int main(int argc, char *argv[]) {
     // gathering args
@@ -36,7 +38,7 @@ int main(int argc, char *argv[]) {
     // getting input from parent process
     char pairs_string[buffer];
     if((read(fd, &pairs_string, buffer + 1)) == -1) {
-        printf("reading pipe(decoder): unexpected error\n");
+        printf("reading pipe(finder): unexpected error\n");
         return 2;
     }
     close(fd);
@@ -46,21 +48,24 @@ int main(int argc, char *argv[]) {
 
     char* data = get_data_from_decoder(decoder_pipe_path);
 
-    char letters[pairs_count][MAX_LETTER_LENGTH];
+    char words[pairs_count][MAX_LETTER_LENGTH];
     for(int i = 0; i < pairs_count; i++) {
         int start_index = pairs[i].start;
         int letter_size = pairs[i].size;
-        memcpy(letters[i], &data[start_index - 1], letter_size);
-        letters[i][letter_size] = 0;
+        memcpy(words[i], &data[start_index - 1], letter_size);
+        words[i][letter_size] = 0;
     }
+
     FILE *output = fopen("finder_result.txt", "w");
     for(int i = 0; i < pairs_count; i++) {
         char* template = malloc(MAX_LETTER_LENGTH);
-        memcpy(template, letters[i], strlen(letters[i]));
+        memcpy(template, words[i], strlen(words[i]));
         template[strlen(template)] = '\n';
         fputs(template, output);
     }
     fclose(output);
+
+    send_data_to_placer(words, placer_pipe_path, pairs_count);
 
     return 0;
 }
@@ -127,4 +132,24 @@ char* get_data_from_decoder(char* pipe_path) {
     char* result = malloc(buffer + 1);
     memcpy(result, data, buffer + 1);
     return result;
+}
+
+void send_data_to_placer(char words[][MAX_LETTER_LENGTH], char* pipe_path, int words_count) {
+    int buffer = 0;
+    for(int i = 0; i < words_count; i++) buffer += strlen(words[i]);
+
+    int fd = open(pipe_path, O_WRONLY);
+    if(fd == -1) {
+        printf("opening pipe(finder~placer): unexpected error\n");
+        exit(1);
+    }
+    if(write(fd, &buffer, sizeof(int)) == -1) {
+        printf("writing pipe(finder~placer): unexpected error\n");
+        exit(1);
+    }
+    if(write(fd, words, buffer + 1) == -1) {
+        printf("writing pipe(finder~placer): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
 }
