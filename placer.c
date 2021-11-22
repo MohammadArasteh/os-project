@@ -8,6 +8,8 @@
 
 int get_words_count_from_finder(int fd);
 void get_data_from_finder(int words_count, int fd, char result[][32]);
+char* shift(char str[], int startIndex ,int k);
+void fill_template(char template[], int template_len, char words[][32], int words_len);
 
 int main(int argc, char *argv[]) {
 
@@ -24,7 +26,7 @@ int main(int argc, char *argv[]) {
     }
 
     // getting input from parent process
-    char template[buffer];
+    char template[2*buffer];
     if((read(fd, &template, buffer + 1)) == -1) {
         printf("reading pipe(placer): unexpected error\n");
         return 2;
@@ -40,6 +42,8 @@ int main(int argc, char *argv[]) {
     char words[words_count][32];
     get_data_from_finder(words_count, fd, words);
     close(fd);
+
+    fill_template(template, buffer, words, words_count);
 
     return 0;
 }
@@ -57,4 +61,28 @@ void get_data_from_finder(int words_count, int fd, char result[][32]) {
         printf("reading pipe(placer~decoder): unexpected error\n");
         exit(1);
     }
+}
+void fill_template(char template[], int template_len, char words[][32], int words_len) {
+    int current_word = 0, index = 0;
+    while(current_word != words_len && template[index] != 0) {
+        if(template[index] == '$') {
+            memmove(&template[index], &template[index + 1], strlen(template) - index);
+            int len = strlen(words[current_word]);
+            char* shiftedTempalte = shift(template, index, strlen(words[current_word]));
+            for(int i = 0; i < len; i++) 
+                memset(shiftedTempalte + index + i, words[current_word][i], 1);
+            memcpy(template, shiftedTempalte, strlen(shiftedTempalte));
+            template[strlen(shiftedTempalte)] = 0;
+            current_word++;
+        }
+        index++;
+    }
+}
+char* shift(char str[], int startIndex ,int k) {
+    char *temp = malloc(strlen(str) + k);
+    memcpy(temp, str, strlen(str) + k);
+    for(int i = startIndex + k; i < strlen(str) + k; i++)
+        temp[i] = str[i - k];
+    temp[strlen(str)+k] = 0;
+    return temp;
 }
