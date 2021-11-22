@@ -7,3 +7,4 @@ decoder_result.txt
 finder_result.txt
 placer_result.txt
 output.txt
+run.c
