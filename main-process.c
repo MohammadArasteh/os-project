@@ -135,7 +135,7 @@ void read_section(char str[],char result[],int* cursor) {
         result[*cursor - temp] = str[*cursor];
         *cursor += 1;
     }
-    result[*cursor] = '\0';
+    result[*cursor - temp] = 0;
     while(str[*cursor] == '#' || str[*cursor] == 10) *cursor += 1;
 }
 
