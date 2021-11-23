@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
     }
     close(fd);
 
+    // getting finder output
     fd = open(finder_pipe_path, O_RDONLY);
     if(fd == -1) {
         printf("opening pipe(finder~placer): unexpected error\n");
@@ -43,7 +44,10 @@ int main(int argc, char *argv[]) {
     get_data_from_finder(words_count, fd, words);
     close(fd);
 
+    // replace $ with decoded words
     fill_template(template, buffer, words, words_count);
+
+    // send final result to main process
     fd = open(pipe_path, O_WRONLY);
     if(fd == -1) {
         printf("opening pipe(placer~main): unexpected error\n");
@@ -58,6 +62,7 @@ int main(int argc, char *argv[]) {
     FILE *output = fopen("placer_result.txt", "w");
     fputs(template, output);
     fclose(output);
+    
     return 0;
 }
 

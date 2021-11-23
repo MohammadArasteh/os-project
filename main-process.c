@@ -10,7 +10,10 @@
 char** input();
 char* read_input();
 void read_section(char str[],char result[],int* cursor);
-int create_pipe(char *addr);
+void create_pipe(char *addr);
+void create_pipes();
+void send_data_to_child(char* data, char* pipe_path);
+char* receive_data_from_placer(char* pipe_path, int buffer);
 
 static char *main_pipe_decoder_path = "./pipes/main_pipe_decoder";
 static char *main_pipe_finder_path = "./pipes/main_pipe_finder";
@@ -26,6 +29,8 @@ int main() {
     char* decoder_data = input_data[0];
     char* finder_data = input_data[1];
     char* placer_data = input_data[2];
+    
+    int RESULT_MAX_LENGTH = 2*strlen(placer_data);
 
     int main_process_pid, 
         decoder_pid, 
@@ -39,47 +44,15 @@ int main() {
     if(decoder_pid && finder_pid) placer_pid = fork();
 
     if(decoder_pid && finder_pid && placer_pid) {
+        
+        create_pipes();
 
-        if(!create_pipe(main_pipe_decoder_path)) return 1;
-        if(!create_pipe(main_pipe_finder_path)) return 1;
-        if(!create_pipe(main_pipe_placer_path)) return 1;
-        if(!create_pipe(decoder_pipe_finder_path)) return 1;
-        if(!create_pipe(finder_pipe_placer_path)) return 1;
+        send_data_to_child(decoder_data, main_pipe_decoder_path);
+        send_data_to_child(finder_data, main_pipe_finder_path);
+        send_data_to_child(placer_data, main_pipe_placer_path);
 
-        int buffer;
-
-        int decoder_fd = open(main_pipe_decoder_path, O_WRONLY);
-        buffer = strlen(decoder_data) + 1;
-        if(write(decoder_fd, decoder_data, buffer) == -1) {
-            printf("writing pipe(decoder): unexpected error\n");
-            return 2;
-        }
-        close(decoder_fd);
-
-        int finder_fd = open(main_pipe_finder_path, O_WRONLY);
-        buffer = strlen(finder_data) + 1;
-        if(write(finder_fd, finder_data, buffer) == -1) {
-            printf("writing pipe(finder): unexpected error\n");
-            return 2;
-        }
-        close(finder_fd);
-
-        int placer_fd = open(main_pipe_placer_path, O_WRONLY);
-        buffer = strlen(placer_data) + 1;
-        if(write(placer_fd, placer_data, buffer) == -1) {
-            printf("writing pipe(placer): unexpected error\n");
-            return 2;
-        }
-        close(placer_fd);
-
-        char placer_result[2*buffer];
-        placer_fd = open(main_pipe_placer_path, O_RDONLY);
-        if(read(placer_fd, placer_result, 2*buffer) == -1) {
-            printf("reading pipe(placer): unexpected error\n");
-            return 2;
-        }
-        close(placer_fd);
-        printf("result: %s\n", placer_result);
+        char* result = receive_data_from_placer(main_pipe_placer_path, RESULT_MAX_LENGTH);
+        printf("result: %s\n", result);
     }
 
     if(decoder_pid == CURRENT_CHILD) { // inside decoder process
@@ -115,16 +88,22 @@ int main() {
 }    
 
 struct stat st = {0};
-int create_pipe(char *addr) {
+void create_pipe(char *addr) {
     if(stat("./pipes", &st) == -1)
         mkdir("./pipes", 0777);
     if(mkfifo(addr, 0777) == -1) {
         if(errno != EEXIST) {
             printf("creating fifo: unexpected error\n");
-            return 0;
+            exit(1);
         }
     }
-    return 1;
+}
+void create_pipes() {
+    create_pipe(main_pipe_decoder_path);
+    create_pipe(main_pipe_finder_path);
+    create_pipe(main_pipe_placer_path);
+    create_pipe(decoder_pipe_finder_path);
+    create_pipe(finder_pipe_placer_path);
 }
 
 char* read_input() {
@@ -156,19 +135,41 @@ char** input() {
 
     char *decoder_data = malloc(input_len);
     read_section(input, decoder_data, &cursor);
-    printf("decoder_data_string: %s\n_______________\n", decoder_data);
+    printf("- decoder_data_string: %s\n-----------------\n", decoder_data);
 
     char *finder_data = malloc(input_len);
     read_section(input, finder_data, &cursor);
-    printf("finder_data_string: %s\n_______________\n", finder_data);
+    printf("- finder_data_string: %s\n-----------------\n", finder_data);
 
     char *placer_data = malloc(input_len);
     read_section(input, placer_data, &cursor);
-    printf("placer_data_string: %s\n_______________\n", placer_data);
+    printf("- placer_data_string: %s\n-----------------\n", placer_data);
 
     char** result = malloc(3 * input_len);
     result[0] = decoder_data;
     result[1] = finder_data;
     result[2] = placer_data;
+    return result;
+}
+
+void send_data_to_child(char* data, char* pipe_path) {
+    int fd = open(pipe_path, O_WRONLY);
+    int buffer = strlen(data) + 1;
+    if(write(fd, data, buffer) == -1) {
+        printf("writing pipe(decoder): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
+}
+char* receive_data_from_placer(char* pipe_path, int buffer) {
+    char data[buffer];
+    int fd = open(pipe_path, O_RDONLY);
+    if(read(fd, data, buffer) == -1) {
+        printf("reading pipe(placer): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
+    char* result = malloc(buffer);
+    memcpy(result, data, buffer);
     return result;
 }

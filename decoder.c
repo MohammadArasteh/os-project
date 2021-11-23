@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     // opening fifo file (aka named-pipe)
     int fd = open(pipe_path, O_RDONLY);
     if(fd == -1) {
-        printf("opening pipe(decoder)::: unexpected error\n");
+        printf("opening pipe(decoder): unexpected error\n");
         exit(1);
     }
 
