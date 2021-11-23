@@ -54,6 +54,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     close(fd);
+
+    FILE *output = fopen("placer_result.txt", "w");
+    fputs(template, output);
+    fclose(output);
     return 0;
 }
 
