@@ -44,7 +44,16 @@ int main(int argc, char *argv[]) {
     close(fd);
 
     fill_template(template, buffer, words, words_count);
-
+    fd = open(pipe_path, O_WRONLY);
+    if(fd == -1) {
+        printf("opening pipe(placer~main): unexpected error\n");
+        exit(1);
+    }
+    if(write(fd, template, strlen(template) + 1) == -1) {
+        printf("writing pipe(placer~main): unexpected error\n");
+        exit(1);
+    }
+    close(fd);
     return 0;
 }
 

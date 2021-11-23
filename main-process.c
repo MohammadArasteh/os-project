@@ -71,6 +71,15 @@ int main() {
             return 2;
         }
         close(placer_fd);
+
+        char placer_result[2*buffer];
+        placer_fd = open(main_pipe_placer_path, O_RDONLY);
+        if(read(placer_fd, placer_result, 2*buffer) == -1) {
+            printf("reading pipe(placer): unexpected error\n");
+            return 2;
+        }
+        close(placer_fd);
+        printf("result: %s\n", placer_result);
     }
 
     if(decoder_pid == CURRENT_CHILD) { // inside decoder process
@@ -147,15 +156,15 @@ char** input() {
 
     char *decoder_data = malloc(input_len);
     read_section(input, decoder_data, &cursor);
-    // printf("decoder_data: %s\n", decoder_data);
+    printf("decoder_data_string: %s\n_______________\n", decoder_data);
 
     char *finder_data = malloc(input_len);
     read_section(input, finder_data, &cursor);
-    // printf("finder_data: %s\n", finder_data);
+    printf("finder_data_string: %s\n_______________\n", finder_data);
 
     char *placer_data = malloc(input_len);
     read_section(input, placer_data, &cursor);
-    // printf("placer_data: %s\n", placer_data);
+    printf("placer_data_string: %s\n_______________\n", placer_data);
 
     char** result = malloc(3 * input_len);
     result[0] = decoder_data;
