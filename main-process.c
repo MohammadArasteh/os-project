@@ -29,12 +29,12 @@ int main() {
     char* decoder_data = input_data[0];
     char* finder_data = input_data[1];
     char* placer_data = input_data[2];
-    
+
     int RESULT_MAX_LENGTH = 2*strlen(placer_data);
 
-    int main_process_pid, 
-        decoder_pid, 
-        finder_pid, 
+    int main_process_pid,
+        decoder_pid,
+        finder_pid,
         placer_pid;
 
     main_process_pid = getpid();
@@ -44,7 +44,7 @@ int main() {
     if(decoder_pid && finder_pid) placer_pid = fork();
 
     if(decoder_pid && finder_pid && placer_pid) {
-        
+
         create_pipes();
 
         send_data_to_child(decoder_data, main_pipe_decoder_path);
@@ -52,40 +52,40 @@ int main() {
         send_data_to_child(placer_data, main_pipe_placer_path);
 
         char* result = receive_data_from_placer(main_pipe_placer_path, RESULT_MAX_LENGTH);
-        printf("result: %s\n", result);
+        printf("result: \n%s\n", result);
     }
 
     if(decoder_pid == CURRENT_CHILD) { // inside decoder process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(decoder_data) + 1);
-        char *args[] = {"./decoder", 
-                        buffer, 
-                        main_pipe_decoder_path, 
+        char *args[] = {"./decoder",
+                        buffer,
+                        main_pipe_decoder_path,
                         decoder_pipe_finder_path, NULL};
         execv(args[0], args);
     }
     if(finder_pid == CURRENT_CHILD) { // inside finder process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(finder_data) + 1);
-        char *args[] = {"./finder", 
-                        buffer, 
+        char *args[] = {"./finder",
+                        buffer,
                         main_pipe_finder_path,
-                        decoder_pipe_finder_path, 
+                        decoder_pipe_finder_path,
                         finder_pipe_placer_path, NULL};
         execv(args[0], args);
     }
     if(placer_pid == CURRENT_CHILD) { //inside placer process
         char buffer[12];
         sprintf(buffer, "%lu", strlen(placer_data) + 1);
-        char *args[] = {"./placer", 
-                        buffer, 
-                        main_pipe_placer_path, 
+        char *args[] = {"./placer",
+                        buffer,
+                        main_pipe_placer_path,
                         finder_pipe_placer_path, NULL};
         execv(args[0], args);
     }
 
     return 0;
-}    
+}
 
 struct stat st = {0};
 void create_pipe(char *addr) {
@@ -120,11 +120,12 @@ char* read_input() {
 
 void read_section(char str[],char result[],int* cursor) {
     int temp = *cursor;
-    while(str[*cursor] != '#' && str[*cursor] != 10 && str[*cursor] != 0) {
+    while(str[*cursor] != '#' && str[*cursor] != 0) {
         result[*cursor - temp] = str[*cursor];
         *cursor += 1;
     }
     result[*cursor - temp] = 0;
+    *cursor += 1;
     while(str[*cursor] == '#' || str[*cursor] == 10) *cursor += 1;
 }
 
@@ -135,15 +136,15 @@ char** input() {
 
     char *decoder_data = malloc(input_len);
     read_section(input, decoder_data, &cursor);
-    printf("- decoder_data_string: %s\n-----------------\n", decoder_data);
+    printf("- decoder_data_string: \n%s\n-----------------\n", decoder_data);
 
     char *finder_data = malloc(input_len);
     read_section(input, finder_data, &cursor);
-    printf("- finder_data_string: %s\n-----------------\n", finder_data);
+    printf("- finder_data_string: \n%s\n-----------------\n", finder_data);
 
     char *placer_data = malloc(input_len);
     read_section(input, placer_data, &cursor);
-    printf("- placer_data_string: %s\n-----------------\n", placer_data);
+    printf("- placer_data_string: \n%s\n-----------------\n\n\n", placer_data);
 
     char** result = malloc(3 * input_len);
     result[0] = decoder_data;
@@ -156,7 +157,7 @@ void send_data_to_child(char* data, char* pipe_path) {
     int fd = open(pipe_path, O_WRONLY);
     int buffer = strlen(data) + 1;
     if(write(fd, data, buffer) == -1) {
-        printf("writing pipe(decoder): unexpected error\n");
+        printf("writing pipe(%s): unexpected error\n", pipe_path);
         exit(1);
     }
     close(fd);

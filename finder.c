@@ -42,10 +42,8 @@ int main(int argc, char *argv[]) {
         return 2;
     }
     close(fd);
-
     int pairs_count;
     struct pair* pairs = extract_pears(pairs_string, &pairs_count);
-
     char* data = get_data_from_decoder(decoder_pipe_path);
 
     char words[pairs_count][MAX_LETTER_LENGTH];
@@ -74,11 +72,10 @@ struct pair* extract_pears(char* str, int* pairs_count) {
     *pairs_count = count_pairs(str);
     int cursor = 0;
     struct pair* pairs = malloc(*pairs_count * sizeof(struct pair));
-
     int index = 0;
-    while(str[cursor] != 0) 
+    while(cursor < strlen(str) - 1)
         pairs[index++] = extract_pear(str, &cursor);
-    
+
     return pairs;
 }
 struct pair extract_pear(char* str, int* cursor) {
@@ -88,16 +85,13 @@ struct pair extract_pear(char* str, int* cursor) {
     return p;
 }
 int read_digit(char* str, int* cursor) {
-    int temp = *cursor;
-    char* temp_string = malloc(8);
+    int temp = *cursor, digit = 0;
     while(str[*cursor] != ' ' && str[*cursor] != '$') {
-        temp_string[*cursor - temp] = str[*cursor];
+        int d = str[*cursor] - 48;
+        digit = digit*10 + d;
         *cursor += 1;
     }
-    temp_string[*cursor] = 0;
     *cursor += 1;
-    int digit = atoi(temp_string);
-    free(temp_string);
     return digit;
 }
 
@@ -122,7 +116,7 @@ char* get_data_from_decoder(char* pipe_path) {
         printf("reading pipe(finder~decoder): unexpected error\n");
         exit(1);
     }
-    
+
     char data[buffer];
     if((read(fd, &data, buffer + 1)) == -1) {
         printf("reading pipe(finder~decoder): unexpected error\n");
